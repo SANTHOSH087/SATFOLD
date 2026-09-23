@@ -1,0 +1,456 @@
+
+import bpy, math
+from mathutils import Vector
+
+# ============================================================
+# ORBITGUARD - Detailed 1U CubeSat Blender Prototype Generator
+# Units: millimeters (1 Blender unit = 1 mm)
+# Designed for Blender 5.2.x (also compatible with recent Blender 4.x builds)
+# ============================================================
+
+# ---------- CLEAN SCENE ----------
+bpy.ops.object.select_all(action='SELECT')
+bpy.ops.object.delete(use_global=False)
+for datablocks in (bpy.data.meshes, bpy.data.curves, bpy.data.materials, bpy.data.cameras, bpy.data.lights):
+    pass
+
+scene = bpy.context.scene
+scene.unit_settings.system = 'METRIC'
+scene.unit_settings.length_unit = 'MILLIMETERS'
+scene.render.engine = 'BLENDER_EEVEE_NEXT' if 'BLENDER_EEVEE_NEXT' in [i.identifier for i in bpy.types.RenderSettings.bl_rna.properties['engine'].enum_items] else 'BLENDER_EEVEE'
+scene.render.resolution_x = 1600
+scene.render.resolution_y = 1000
+scene.render.resolution_percentage = 100
+scene.render.image_settings.file_format = 'PNG'
+scene.render.film_transparent = False
+scene.world.color = (0.008, 0.012, 0.025)
+
+# ---------- MATERIALS ----------
+def mat(name, color, metallic=0.0, rough=0.45, emission=None):
+    m = bpy.data.materials.new(name)
+    m.diffuse_color = (*color, 1)
+    m.use_nodes = True
+    bs = m.node_tree.nodes.get("Principled BSDF")
+    bs.inputs["Base Color"].default_value = (*color, 1)
+    bs.inputs["Metallic"].default_value = metallic
+    bs.inputs["Roughness"].default_value = rough
+    if emission:
+        bs.inputs["Emission Color"].default_value = (*emission, 1)
+        bs.inputs["Emission Strength"].default_value = 2.0
+    return m
+
+BODY = mat("CubeSat anodized aluminum", (0.16,0.19,0.23), 0.75, 0.24)
+DARK = mat("Dark structural frame", (0.025,0.035,0.05), 0.7, 0.25)
+PCB = mat("PCB", (0.015,0.11,0.055), 0.15, 0.32)
+COPPER = mat("Copper", (0.45,0.16,0.045), 0.75, 0.25)
+SILVER = mat("Sensor metal", (0.55,0.58,0.62), 0.85, 0.2)
+BLACK = mat("Electronics black", (0.008,0.01,0.014), 0.3, 0.25)
+WHITE = mat("Sensor ceramic", (0.8,0.82,0.84), 0.1, 0.28)
+SOLAR = mat("Solar cell", (0.015,0.055,0.12), 0.25, 0.2)
+CELLGRID = mat("Solar cell grid", (0.35,0.55,0.75), 0.35, 0.3)
+WIRE = mat("SMA Nitinol", (0.65,0.68,0.72), 0.9, 0.17)
+GOLD = mat("Gold contacts", (0.83,0.53,0.08), 0.8, 0.18)
+RED = mat("Warning red", (0.5,0.015,0.02), 0.2, 0.28, (0.8,0.01,0.01))
+BLUE = mat("Status blue", (0.01,0.18,0.8), 0.2, 0.25, (0.01,0.2,1.0))
+GREEN = mat("Status green", (0.02,0.45,0.08), 0.2, 0.25, (0.02,0.6,0.1))
+ORANGE = mat("Heating indicator", (0.7,0.22,0.01), 0.15, 0.25, (1.0,0.18,0.01))
+TEXTMAT = mat("Technical labels", (0.65,0.85,1.0), 0.0, 0.3, (0.15,0.45,1.0))
+
+# ---------- HELPERS ----------
+def cube(name, loc, scale, material, bevel=0.0):
+    bpy.ops.mesh.primitive_cube_add(location=loc)
+    o = bpy.context.object
+    o.name = name
+    o.dimensions = scale
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    if material: o.data.materials.append(material)
+    if bevel:
+        mod = o.modifiers.new("Edge bevel", 'BEVEL')
+        mod.width = bevel
+        mod.segments = 3
+    return o
+
+def cyl(name, loc, radius, depth, material, vertices=32, rot=(0,0,0)):
+    bpy.ops.mesh.primitive_cylinder_add(vertices=vertices, radius=radius, depth=depth, location=loc, rotation=rot)
+    o=bpy.context.object; o.name=name
+    if material: o.data.materials.append(material)
+    return o
+
+def uv_sphere(name, loc, scale, material):
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, location=loc)
+    o=bpy.context.object; o.name=name; o.scale=scale
+    if material: o.data.materials.append(material)
+    return o
+
+def rod_between(name, a, b, radius, material):
+    a,b=Vector(a),Vector(b)
+    d=b-a
+    mid=(a+b)/2
+    o=cyl(name, mid, radius, d.length, material, 24)
+    o.rotation_mode='QUATERNION'
+    o.rotation_quaternion=d.to_track_quat('Z','Y')
+    return o
+
+def text_obj(body, loc, size=6, material=TEXTMAT, rot=(math.radians(72),0,0), align='CENTER'):
+    bpy.ops.object.text_add(location=loc, rotation=rot)
+    t=bpy.context.object
+    t.data.body=body
+    t.data.align_x=align
+    t.data.size=size
+    t.data.extrude=0.15
+    t.data.bevel_depth=0.03
+    t.data.materials.append(material)
+    return t
+
+def empty(name, loc):
+    o=bpy.data.objects.new(name, None)
+    bpy.context.collection.objects.link(o)
+    o.location=loc
+    return o
+
+# ---------- MAIN 1U CUBESAT ----------
+# Main body: 100 x 100 x 113.5 mm approx including rails
+body = cube("CUBESAT 1U BODY", (0,0,0), (100,100,100), BODY, 3)
+
+# Hollow-looking front panels / frame rails
+rail_positions = [
+    (-48,-48,-48),(48,-48,-48),(-48,48,-48),(48,48,-48),
+    (-48,-48,48),(48,-48,48),(-48,48,48),(48,48,48)
+]
+for i,p in enumerate(rail_positions):
+    cyl(f"Corner Rail {i+1}", p, 3.0, 108, SILVER, 24)
+
+# Front face panel
+cube("Front electronics face", (0,-50.8,0), (92,2.0,92), DARK, 1.5)
+# Side service panel
+cube("Side service panel", (50.8,0,0), (2.0,92,92), DARK, 1.5)
+
+# Access panel screws
+for x in (-40,-20,0,20,40):
+    for z in (-40,40):
+        cyl("Panel screw", (x,-52.0,z), 1.5, 1.5, SILVER, 16, rot=(math.radians(90),0,0))
+
+# ---------- INTERNAL COMPONENTS / OPEN-CUTAWAY REPRESENTATION ----------
+# PCB stack
+cube("Main avionics PCB", (0,0,10), (76,72,3), PCB, 1.2)
+cube("Power distribution PCB", (0,0,-28), (72,68,3), PCB, 1.2)
+
+# ESP32
+cube("ESP32 controller", (-18,-5,15), (30,22,5), BLACK, 1.0)
+# ESP32 pin rows
+for x in (-30,-25,-20,-15,-10,-5):
+    cyl("GPIO header", (x,-17,17.5), 0.7, 3.0, GOLD, 12, rot=(math.radians(90),0,0))
+    cyl("GPIO header", (x,7,17.5), 0.7, 3.0, GOLD, 12, rot=(math.radians(90),0,0))
+text_obj("ESP32", (-18,-19,22), 5, TEXTMAT)
+
+# MOSFET driver
+cube("SMA MOSFET DRIVER", (20,-5,15), (18,18,6), BLACK, 1.0)
+cyl("MOSFET heatsink", (20,-5,19), 4, 2, SILVER, 24)
+text_obj("MOSFET", (20,-18,22), 4, TEXTMAT)
+
+# Battery
+cube("LiPo battery", (0,25,-5), (58,26,12), SILVER, 2)
+cube("Battery label", (0,11.5,0), (44,0.8,7), BLACK, 0.2)
+text_obj("Li-PO 3.7V", (0,10.8,4), 3.5, TEXTMAT)
+
+# Current sensor
+cube("INA219 current sensor", (28,25,12), (12,10,3), BLACK, 0.6)
+text_obj("INA219", (28,20,14), 2.8, TEXTMAT)
+
+# IMU
+cube("9-DOF IMU", (25,8,12), (12,12,3), BLACK, 0.6)
+cyl("IMU package", (25,8,14), 3, 2, SILVER, 24)
+
+# ---------- ENVIRONMENTAL SENSOR MODULE ----------
+# Temperature sensor DS18B20
+cyl("DS18B20 temperature sensor", (-32,35,28), 3.5, 14, SILVER, 24, rot=(math.radians(90),0,0))
+text_obj("TEMP", (-32,42,30), 3.5, TEXTMAT)
+
+# Humidity sensor SHT31/DHT22 style
+cube("Humidity sensor", (-8,35,28), (12,8,5), WHITE, 1)
+for x in (-11,-8,-5):
+    cube("Humidity vent", (x,39.3,28), (1.2,0.8,2.8), BLACK, 0.2)
+text_obj("HUMIDITY", (-8,44,30), 3.2, TEXTMAT)
+
+# Light sensor
+cube("Ambient light sensor", (15,35,28), (10,8,4), BLACK, 1)
+uv_sphere("Photodiode", (15,39,30), (2.2,1.2,1.2), BLUE)
+text_obj("LIGHT", (15,44,30), 3.2, TEXTMAT)
+
+# Pressure sensor
+cube("Barometric pressure sensor", (32,35,28), (10,8,4), BLACK, 1)
+cyl("Pressure port", (32,39.5,30), 1.5, 1, SILVER, 20, rot=(math.radians(90),0,0))
+text_obj("PRESS", (32,44,30), 3.0, TEXTMAT)
+
+# ---------- RADIO / COMMUNICATION ----------
+cube("LoRa / RF module", (-25,-35,30), (30,18,5), BLACK, 1)
+text_obj("RF", (-25,-45,34), 4, TEXTMAT)
+
+# Antenna
+rod_between("RF antenna", (-25,-45,32), (-25,-45,58), 0.9, COPPER)
+
+# GPS
+cube("GNSS GPS module", (20,-35,30), (24,18,5), BLACK, 1)
+cube("Ceramic patch antenna", (20,-35,33), (18,13,2), WHITE, 1)
+text_obj("GNSS", (20,-45,34), 4, TEXTMAT)
+
+# ---------- CAMERA ----------
+cube("Mission camera", (0,-52.2,28), (22,4,22), BLACK, 2)
+cyl("Camera lens", (0,-55,28), 6, 5, SILVER, 48, rot=(math.radians(90),0,0))
+cyl("Lens glass", (0,-58,28), 4.5, 1, BLUE, 48, rot=(math.radians(90),0,0))
+text_obj("CAM", (0,-61,38), 4, TEXTMAT, rot=(math.radians(90),0,0))
+
+# ---------- SOLAR PANEL DEPLOYMENT MECHANISM ----------
+# True unfold mechanism:
+# Each solar panel is mounted to a vertical hinge on the +X / -X side.
+# The panel starts stowed against the CubeSat wall and unfolds 90 degrees
+# around the vertical Z axis.  A pivot Empty is used so the panel and ALL
+# solar cells rotate together around the actual hinge line.
+
+HINGE_Z = 0
+HINGE_X = 50
+
+# Left/right vertical hinge barrels
+for side in (-1, 1):
+    x = side * HINGE_X
+    for z in (-34, 0, 34):
+        cyl(f"Hinge barrel {side} {z}", (x,0,z), 4, 22, SILVER, 32, rot=(0,0,0))
+
+# Continuous vertical deployment shafts
+for side in (-1, 1):
+    cyl(f"Vertical deployment shaft {side}", (side*HINGE_X,0,0),
+        2.2, 82, WIRE, 32, rot=(0,0,0))
+
+def make_solar_panel(name, side):
+    # Pivot is exactly on the spacecraft side wall.
+    pivot = empty(f"{name} HINGE PIVOT", (side*HINGE_X, 0, HINGE_Z))
+
+    # In the stowed position the panel lies vertically against the side.
+    # X thickness, Y width, Z height.
+    panel_center = (side*(HINGE_X + 32), 0, 0)
+    panel = cube(name, panel_center, (3,88,64), DARK, 1.5)
+    panel.parent = pivot
+
+    # Solar cells are children of the same pivot, so they unfold with the panel.
+    # Put them slightly outside the panel surface.
+    for row in range(4):
+        for col in range(3):
+            y = -31 + row*21
+            z = -24 + col*16
+            cell = cube(
+                f"{name} cell R{row+1}C{col+1}",
+                (side*(HINGE_X + 34), y, z),
+                (1,17,14),
+                SOLAR, 0.4
+            )
+            cell.parent = pivot
+
+    # Cell grid / bus strips
+    for z in (-32, -16, 0, 16, 32):
+        strip = cube(
+            f"{name} cell bus {z}",
+            (side*(HINGE_X + 34.8), 0, z),
+            (1,80,0.8),
+            CELLGRID, 0.15
+        )
+        strip.parent = pivot
+
+    # Hinge-side mounting brackets
+    for z in (-25, 0, 25):
+        bracket = cube(
+            f"{name} hinge bracket {z}",
+            (side*(HINGE_X + 3), 0, z),
+            (7,18,5),
+            SILVER, 0.8
+        )
+        bracket.parent = pivot
+
+    # Store metadata on the pivot for easy animation/debugging.
+    pivot["deployment_angle_degrees"] = 90.0
+    pivot["deployment_axis"] = "Z"
+    pivot["stowed_state"] = "panel against CubeSat side"
+    pivot["deployed_state"] = "panel unfolded 90 degrees"
+
+    return pivot
+
+left_panel = make_solar_panel("LEFT DEPLOYABLE SOLAR PANEL", -1)
+right_panel = make_solar_panel("RIGHT DEPLOYABLE SOLAR PANEL", 1)
+
+# Panel support arms, attached near the hinge and outer panel edge.
+rod_between("Left support arm", (-48,0,45), (-80,0,10), 2, SILVER)
+rod_between("Right support arm", (48,0,45), (80,0,10), 2, SILVER)
+
+# ---------- SMA NITINOL WIRES + LINKAGES ----------
+# Show two SMA wires on front, visually connected to levers
+for side in (-1,1):
+    p1=(side*30,-54,38)
+    p2=(side*67,-54,18)
+    rod_between(f"SMA Nitinol wire {side}", p1, p2, 1.0, WIRE)
+    # contraction spring / guide
+    cyl(f"SMA anchor {side}", p1, 2.5, 4, GOLD, 24, rot=(math.radians(90),0,0))
+    cyl(f"SMA anchor {side} end", p2, 2.5, 4, GOLD, 24, rot=(math.radians(90),0,0))
+    # linkage
+    rod_between(f"Deployment linkage {side}", p2, (side*78,-54,10), 2.2, SILVER)
+    # return spring
+    for k in range(5):
+        a=(side*(67+k*2),-54,22-k*2)
+        b=(side*(69+k*2),-54,20-k*2)
+        rod_between(f"Return spring {side}", a,b,0.7,COPPER)
+
+# Hall sensors at each panel hinge
+for side in (-1,1):
+    cube(f"Hall sensor {side}", (side*48,-54,45), (8,4,7), BLACK, 0.7)
+    uv_sphere(f"Hall magnet {side}", (side*48,-57,45), (2.5,1,2.5), BLUE)
+    text_obj("HALL", (side*48,-61,47), 3.0, TEXTMAT, rot=(math.radians(90),0,0))
+
+# ---------- THERMAL SENSOR ON SMA ----------
+for side in (-1,1):
+    cube(f"SMA temperature sensor {side}", (side*45,-54,30), (7,4,5), RED, 0.7)
+
+# ---------- POWER / WIRING ----------
+# Main power bus
+rod_between("Battery to PDB bus", (-25,25,-28), (0,25,-28), 1.2, COPPER)
+rod_between("PDB to ESP32 power", (0,25,-28), (-18,0,10), 0.7, RED)
+rod_between("PDB to MOSFET", (0,25,-28), (20,-5,15), 0.7, RED)
+
+# ---------- STATUS LEDs ----------
+for i,(x,z,m) in enumerate([(-25,-42,BLUE),(0,-42,GREEN),(25,-42,RED)]):
+    cyl(f"Status LED {i}", (x,-53,z), 2.2, 2.5, m, 24, rot=(math.radians(90),0,0))
+text_obj("PWR     LINK     SMA", (0,-57,-35), 3.2, TEXTMAT, rot=(math.radians(90),0,0))
+
+# ---------- EXTERNAL DATA / SERVICE PORTS ----------
+for x in (-25,0,25):
+    cube("Service connector", (x,-52,-25), (12,3,7), BLACK, 0.7)
+    for j in range(4):
+        cyl("Connector pin", (x-4+j*2.7,-54,-25), 0.7, 1, GOLD, 12, rot=(math.radians(90),0,0))
+
+# ---------- TECHNICAL LABELS ----------
+text_obj("ORBITGUARD", (0,-58,48), 8, TEXTMAT, rot=(math.radians(90),0,0))
+text_obj("1U CUBESAT", (0,-58,41), 4.5, TEXTMAT, rot=(math.radians(90),0,0))
+
+# ---------- DEPLOYMENT SEQUENCE INSET ----------
+# Four small stages behind/right of scene
+stage_z = -105
+for i, label in enumerate(["1  STOWED","2  HEAT SMA","3  LINKAGE","4  90° UNFOLDED"]):
+    x = -135 + i*90
+    cube(f"Stage {i}", (x,60,stage_z), (72,45,2), DARK, 1)
+    text_obj(label, (x,60,stage_z+4), 4, TEXTMAT, rot=(math.radians(90),0,0))
+# small SMA sequence bars
+rod_between("Sequence deformed SMA", (-160,37,stage_z+10), (-125,37,stage_z+10), 1.3, WIRE)
+rod_between("Sequence recovered SMA", (20,37,stage_z+10), (55,37,stage_z+10), 1.3, WIRE)
+
+# ---------- DIMENSION MARKERS ----------
+def dimension_line(a,b,label):
+    rod_between("Dimension",a,b,0.35,TEXTMAT)
+    mid=(Vector(a)+Vector(b))/2
+    text_obj(label, (mid.x,mid.y,mid.z+3), 3.2, TEXTMAT)
+
+dimension_line((-50,-68,-60),(50,-68,-60),"100 mm")
+dimension_line((-68,-50,-50),(-68,50,-50),"100 mm")
+
+# ---------- GROUND / DISPLAY PLATFORM ----------
+cube("Presentation base", (0,0,-72), (360,250,5), DARK, 3)
+text_obj("ORBITGUARD • SMART SMA SOLAR DEPLOYMENT", (0,105,-68), 7, TEXTMAT, rot=(0,0,0))
+
+# ---------- CAMERA ----------
+bpy.ops.object.camera_add(location=(285,-330,235))
+cam=bpy.context.object
+scene.camera=cam
+def look_at(obj, target):
+    direction=Vector(target)-obj.location
+    obj.rotation_euler=direction.to_track_quat('-Z','Y').to_euler()
+look_at(cam,(0,0,-5))
+cam.data.lens=52
+
+# ---------- LIGHTING ----------
+bpy.ops.object.light_add(type='AREA', location=(100,-150,280))
+key=bpy.context.object; key.name="Key light"; key.data.energy=1600; key.data.shape='DISK'; key.data.size=180
+look_at(key,(0,0,0))
+
+bpy.ops.object.light_add(type='AREA', location=(-220,-60,120))
+fill=bpy.context.object; fill.name="Fill light"; fill.data.energy=900; fill.data.size=160
+look_at(fill,(0,0,0))
+
+bpy.ops.object.light_add(type='AREA', location=(0,200,180))
+rim=bpy.context.object; rim.name="Rim light"; rim.data.energy=1200; rim.data.size=120
+look_at(rim,(0,0,0))
+
+# ---------- ANIMATION: SMA-DRIVEN 90° PANEL UNFOLD ----------
+# Frame 1   : fully stowed against the CubeSat
+# Frame 20  : SMA heating / trigger
+# Frame 45  : panel halfway open
+# Frame 70  : fully unfolded at 90°
+#
+# The pivot Empty is animated, not the panel itself. This makes the panel,
+# cells, brackets, and all attached geometry rotate around the real hinge.
+for pivot, side in [(left_panel,-1),(right_panel,1)]:
+    pivot.rotation_mode = 'XYZ'
+
+    # Stowed
+    pivot.rotation_euler[2] = 0
+    pivot.keyframe_insert(data_path="rotation_euler", frame=1, index=2)
+
+    # Hold while SMA heats
+    pivot.rotation_euler[2] = 0
+    pivot.keyframe_insert(data_path="rotation_euler", frame=20, index=2)
+
+    # Smooth 90-degree unfold
+    pivot.rotation_euler[2] = math.radians(side * 90)
+    pivot.keyframe_insert(data_path="rotation_euler", frame=70, index=2)
+
+    # Make the deployment motion easy to see and physically intentional.
+    if pivot.animation_data and pivot.animation_data.action:
+        for fc in pivot.animation_data.action.fcurves:
+            for kp in fc.keyframe_points:
+                kp.interpolation = 'BEZIER'
+
+# SMA wire visual cue: heating period and contraction indicator.
+# The actual SMA wire remains a concept representation; the panel motion is
+# driven by the hinge pivot animation above.
+
+# Animate status LED / heating indicator
+for f, val in [(1,0.1),(15,2.5),(30,2.5),(45,0.2)]:
+    RED.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value=val
+    RED.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].keyframe_insert("default_value", frame=f)
+
+# ---------- ORGANIZE COLLECTIONS ----------
+def move_to_collection(obj, collection):
+    for c in list(obj.users_collection):
+        c.objects.unlink(obj)
+    collection.objects.link(obj)
+
+# Create collections
+names=["01_CubeSat_Body","02_Avionics","03_Sensors","04_SMA_Deployment","05_Solar_Panels","06_Labels","07_Presentation"]
+cols={}
+for n in names:
+    c=bpy.data.collections.get(n) or bpy.data.collections.new(n)
+    if c.name not in scene.collection.children:
+        try: scene.collection.children.link(c)
+        except: pass
+    cols[n]=c
+
+# Move based on object name
+for o in list(scene.objects):
+    if o.name.startswith(("TEMP","Humidity","Ambient","Barometric","DS18","SMA temperature","Hall","IMU")) or "sensor" in o.name.lower():
+        target=cols["03_Sensors"]
+    elif "SMA" in o.name or "linkage" in o.name.lower() or "Hinge" in o.name or "Deployment" in o.name:
+        target=cols["04_SMA_Deployment"]
+    elif "SOLAR" in o.name or "solar" in o.name.lower():
+        target=cols["05_Solar_Panels"]
+    elif "label" in o.name.lower() or o.type=='FONT':
+        target=cols["06_Labels"]
+    else:
+        target=cols["01_CubeSat_Body"]
+    try: move_to_collection(o,target)
+    except: pass
+
+# ---------- RENDER SETTINGS ----------
+scene.render.image_settings.file_format='PNG'
+scene.render.filepath="//ORBITGUARD_detailed_render.png"
+scene.render.film_transparent=False
+
+# Save
+bpy.ops.wm.save_as_mainfile(filepath="//ORBITGUARD_Detailed_CubeSat.blend")
+bpy.ops.render.render(write_still=True)
+
+print("ORBITGUARD detailed CubeSat prototype created and saved.")
