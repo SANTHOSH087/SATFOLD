@@ -1,0 +1,14 @@
+Category,Item,Part Number / Spec,Quantity,Estimated Cost (INR),Supplier / Source,Notes
+Actuator,Nitinol SMA Wire,"0.3mm - 0.5mm, 90°C Transition, 200mm",1,450,Specialty Metals / Robu.in,Primary shape memory linear puller
+Controller,ESP32 Development Board,ESP32-WROOM-32 / NodeMCU,1,350,Standard Electronics Vendor,Runs closed-loop state machine & telemetry
+Power Switch,N-Channel Power MOSFET,"IRLZ44N / Logic Level AO3400 (Vds=30V, Id=5A+)",1,40,Electronics Components Store,Joule heating control switch
+Power Regulation,DC-DC Step Down Buck Converter,"MP2307 / LM2596 (3.7-12V in, 3.3V out)",1,80,Electronics Store,Regulates battery voltage to clean 3.3V
+Sensor,Current/Power Sensor Module,"INA219 High-Side I2C Current/Power Monitor",1,180,Adafruit / Generic breakout,Detects wire continuity/snaps and short circuits
+Sensor,Digital Temperature Sensor,"DS18B20 1-Wire Digital Thermal Sensor",1,110,Generic,Coupled to SMA wire to prevent overheating
+Sensor,Hall Effect Sensor,"A3144 Digital Unipolar Hall Switch + Neodymium magnet",1,35,Generic,Positive latch confirmation at 90 deg rotation
+Mechanical,Precision Slider & Rails,Custom 3D Printed PETG / Delrin Track,1,150,In-House 3D Printing,Low friction linear slide assembly
+Mechanical,Linkage Rod & Crank Arm,CNC Aluminum / Carbon Fiber Bar + M2/M3 Screws,1,120,Hardware Store,Converts 7-8mm pull to 90 deg rotation
+Mechanical,Reset Bias Spring,Stainless Steel Tension/Torsion Spring,1,25,Hardware Store,Resets slider during wire cool-down
+Chassis,CubeSat Structural Blank,3D Printed PETG Solar Panel Mockup & Hinge,1,200,In-House 3D Printing,Demonstrator testbed
+Power,Li-Po Battery Pack,"1S / 2S 3.7V - 7.4V, 1000mAh 20C",1,450,RC Hobby Vendor,Power source for MCU and heating pulse
+Total,,,,2190,,~26 USD Total Demonstrator Cost

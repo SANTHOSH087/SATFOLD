@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 850" width="100%" height="100%" style="background-color: #0f172a; font-family: 'Segoe UI', Inter, -apple-system, sans-serif;">
+  <defs>
+    <linearGradient id="boxGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="mcuGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a" />
+      <stop offset="100%" stop-color="#172554" />
+    </linearGradient>
+    <linearGradient id="pwrGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#831843" />
+      <stop offset="100%" stop-color="#500724" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Title & Banner -->
+  <rect x="20" y="20" width="1160" height="70" rx="8" fill="#1e293b" stroke="#334155" stroke-width="2" />
+  <text x="40" y="55" fill="#38bdf8" font-size="24" font-weight="bold">ORBITGUARD — Avionics &amp; Actuation Electrical Schematic</text>
+  <text x="40" y="75" fill="#94a3b8" font-size="14">Closed-Loop Nitinol SMA Solar Array Deployment System | Rev 1.0 (SIH 2025)</text>
+  <rect x="980" y="32" width="180" height="46" rx="6" fill="#0369a1" />
+  <text x="1070" y="60" fill="#ffffff" font-size="14" font-weight="bold" text-anchor="middle">STATUS: VERIFIED</text>
+
+  <!-- ==================== POWER SUPPLY SUBSYSTEM ==================== -->
+  <!-- Li-Po Battery -->
+  <rect x="40" y="130" width="180" height="120" rx="6" fill="url(#pwrGrad)" stroke="#f43f5e" stroke-width="2" />
+  <text x="130" y="160" fill="#fda4af" font-size="16" font-weight="bold" text-anchor="middle">Li-Po Battery</text>
+  <text x="130" y="185" fill="#ffffff" font-size="14" text-anchor="middle">3.7V - 4.2V (1S)</text>
+  <text x="130" y="205" fill="#cbd5e1" font-size="12" text-anchor="middle">2200 mAh (Protected)</text>
+  <circle cx="220" cy="160" r="5" fill="#ef4444" />
+  <text x="210" y="155" fill="#ef4444" font-size="12" font-weight="bold">VBAT+</text>
+  <circle cx="220" cy="220" r="5" fill="#3b82f6" />
+  <text x="210" y="235" fill="#60a5fa" font-size="12" font-weight="bold">GND</text>
+
+  <!-- Buck Converter -->
+  <rect x="290" y="130" width="170" height="120" rx="6" fill="url(#boxGrad)" stroke="#38bdf8" stroke-width="1.5" />
+  <text x="375" y="160" fill="#38bdf8" font-size="15" font-weight="bold" text-anchor="middle">Buck Converter</text>
+  <text x="375" y="180" fill="#94a3b8" font-size="12" text-anchor="middle">MP2307 / Step-Down</text>
+  <text x="375" y="200" fill="#e2e8f0" font-size="13" text-anchor="middle">3.3V / 5V Regulated</text>
+  <circle cx="290" cy="160" r="5" fill="#ef4444" />
+  <text x="305" y="155" fill="#f87171" font-size="11">VIN+</text>
+  <circle cx="290" cy="220" r="5" fill="#3b82f6" />
+  <text x="305" y="235" fill="#60a5fa" font-size="11">GND</text>
+  <circle cx="460" cy="160" r="5" fill="#10b981" />
+  <text x="425" y="155" fill="#34d399" font-size="11" font-weight="bold">+3V3</text>
+  <circle cx="460" cy="220" r="5" fill="#3b82f6" />
+  <text x="425" y="235" fill="#60a5fa" font-size="11">GND</text>
+
+  <!-- ==================== MICROCONTROLLER (ESP32) ==================== -->
+  <rect x="520" y="130" width="280" height="420" rx="8" fill="url(#mcuGrad)" stroke="#60a5fa" stroke-width="2" />
+  <text x="660" y="165" fill="#93c5fd" font-size="18" font-weight="bold" text-anchor="middle">ESP32-WROOM-32</text>
+  <text x="660" y="185" fill="#cbd5e1" font-size="12" text-anchor="middle">Avionics Controller &amp; State Machine</text>
+  <line x1="535" y1="195" x2="785" y2="195" stroke="#3b82f6" stroke-width="1" stroke-dasharray="4,4" />
+
+  <!-- MCU Pins Left -->
+  <circle cx="520" cy="220" r="5" fill="#10b981" />
+  <text x="535" y="225" fill="#34d399" font-size="13" font-weight="bold">3V3 / VIN</text>
+  <circle cx="520" cy="260" r="5" fill="#3b82f6" />
+  <text x="535" y="265" fill="#60a5fa" font-size="13" font-weight="bold">GND</text>
+  <circle cx="520" cy="320" r="5" fill="#fbbf24" />
+  <text x="535" y="325" fill="#fde047" font-size="13" font-weight="bold">GPIO21 (SDA)</text>
+  <circle cx="520" cy="360" r="5" fill="#fbbf24" />
+  <text x="535" y="365" fill="#fde047" font-size="13" font-weight="bold">GPIO22 (SCL)</text>
+
+  <!-- MCU Pins Right / Bottom -->
+  <circle cx="800" cy="220" r="5" fill="#f97316" />
+  <text x="710" y="225" fill="#fb923c" font-size="13" font-weight="bold">GPIO25 (PWM)</text>
+  <circle cx="800" cy="280" r="5" fill="#a855f7" />
+  <text x="680" y="285" fill="#c084fc" font-size="13" font-weight="bold">GPIO27 (1-Wire)</text>
+  <circle cx="800" cy="340" r="5" fill="#ec4899" />
+  <text x="690" y="345" fill="#f472b6" font-size="13" font-weight="bold">GPIO26 (Hall In)</text>
+  <circle cx="800" cy="400" r="5" fill="#22c55e" />
+  <text x="700" y="405" fill="#4ade80" font-size="13" font-weight="bold">GPIO2 (LED)</text>
+
+  <!-- ==================== SMA ACTUATOR & POWER SWITCH ==================== -->
+  <!-- INA219 Current Sensor -->
+  <rect x="880" y="130" width="260" height="100" rx="6" fill="url(#boxGrad)" stroke="#fbbf24" stroke-width="1.5" />
+  <text x="1010" y="155" fill="#fde047" font-size="15" font-weight="bold" text-anchor="middle">INA219 Sensor Module</text>
+  <text x="1010" y="175" fill="#94a3b8" font-size="11" text-anchor="middle">High-Side Current / Bus Monitor</text>
+  <circle cx="880" cy="190" r="5" fill="#ef4444" />
+  <text x="895" y="195" fill="#f87171" font-size="11">VIN+</text>
+  <circle cx="1140" cy="190" r="5" fill="#ef4444" />
+  <text x="1100" y="195" fill="#f87171" font-size="11">VIN−</text>
+  <circle cx="940" cy="230" r="4" fill="#fbbf24" />
+  <text x="930" y="222" fill="#fde047" font-size="10">SDA</text>
+  <circle cx="980" cy="230" r="4" fill="#fbbf24" />
+  <text x="970" y="222" fill="#fde047" font-size="10">SCL</text>
+
+  <!-- Nitinol Wire & Snubber Diode -->
+  <rect x="890" y="270" width="240" height="110" rx="6" fill="#1e1b4b" stroke="#818cf8" stroke-width="2" />
+  <text x="1010" y="295" fill="#a5b4fc" font-size="15" font-weight="bold" text-anchor="middle">Nitinol SMA Wire (0.25mm)</text>
+  <text x="1010" y="315" fill="#c7d2fe" font-size="12" text-anchor="middle">R ≈ 3.2 Ω | 200mm Active Length</text>
+  <!-- Diode representation -->
+  <rect x="940" y="335" width="140" height="28" rx="4" fill="#334155" stroke="#94a3b8" />
+  <text x="1010" y="353" fill="#ffffff" font-size="11" text-anchor="middle">1N4007 Snubber Diode</text>
+  <circle cx="890" cy="320" r="5" fill="#ef4444" />
+  <circle cx="1130" cy="320" r="5" fill="#f97316" />
+
+  <!-- MOSFET (IRLZ44N) -->
+  <rect x="910" y="420" width="200" height="110" rx="6" fill="url(#boxGrad)" stroke="#f97316" stroke-width="1.5" />
+  <text x="1010" y="445" fill="#fb923c" font-size="15" font-weight="bold" text-anchor="middle">IRLZ44N N-MOSFET</text>
+  <text x="1010" y="465" fill="#94a3b8" font-size="11" text-anchor="middle">Logic-Level Power Switch</text>
+  <circle cx="910" cy="485" r="5" fill="#f97316" />
+  <text x="925" y="490" fill="#fb923c" font-size="12" font-weight="bold">Gate</text>
+  <circle cx="1010" cy="420" r="5" fill="#f97316" />
+  <text x="1015" y="435" fill="#fb923c" font-size="11" font-weight="bold">Drain</text>
+  <circle cx="1010" cy="530" r="5" fill="#3b82f6" />
+  <text x="1015" y="525" fill="#60a5fa" font-size="11" font-weight="bold">Source (GND)</text>
+
+  <!-- ==================== SENSOR ARRAYS ==================== -->
+  <!-- DS18B20 Temp Sensor -->
+  <rect x="60" y="600" width="280" height="110" rx="6" fill="url(#boxGrad)" stroke="#a855f7" stroke-width="1.5" />
+  <text x="200" y="625" fill="#c084fc" font-size="15" font-weight="bold" text-anchor="middle">DS18B20 Temp Sensor</text>
+  <text x="200" y="645" fill="#94a3b8" font-size="11" text-anchor="middle">Thermally Coupled to SMA Wire</text>
+  <text x="200" y="665" fill="#cbd5e1" font-size="11" text-anchor="middle">Includes 4.7kΩ Pull-up to 3.3V</text>
+  <circle cx="340" cy="655" r="5" fill="#a855f7" />
+  <text x="300" y="650" fill="#c084fc" font-size="11">DATA</text>
+
+  <!-- A3144 Hall Effect Sensor -->
+  <rect x="420" y="600" width="280" height="110" rx="6" fill="url(#boxGrad)" stroke="#ec4899" stroke-width="1.5" />
+  <text x="560" y="625" fill="#f472b6" font-size="15" font-weight="bold" text-anchor="middle">A3144 Hall Effect Sensor</text>
+  <text x="560" y="645" fill="#94a3b8" font-size="11" text-anchor="middle">90° Deployment Lock Detection</text>
+  <text x="560" y="665" fill="#cbd5e1" font-size="11" text-anchor="middle">Digital Output (Active LOW)</text>
+  <circle cx="700" cy="655" r="5" fill="#ec4899" />
+  <text x="665" y="650" fill="#f472b6" font-size="11">OUT</text>
+
+  <!-- Status LED -->
+  <rect x="780" y="600" width="220" height="110" rx="6" fill="url(#boxGrad)" stroke="#22c55e" stroke-width="1.5" />
+  <text x="890" y="625" fill="#4ade80" font-size="15" font-weight="bold" text-anchor="middle">Status LED &amp; Resistor</text>
+  <text x="890" y="645" fill="#94a3b8" font-size="11" text-anchor="middle">Visual Health / Deploy Ind.</text>
+  <text x="890" y="665" fill="#cbd5e1" font-size="11" text-anchor="middle">330Ω Series Resistor</text>
+  <circle cx="780" cy="655" r="5" fill="#22c55e" />
+  <text x="795" y="650" fill="#4ade80" font-size="11">ANODE</text>
+
+  <!-- ==================== WIRING LINES ==================== -->
+  <!-- Power Lines -->
+  <!-- Li-Po to Buck -->
+  <path d="M 220 160 L 290 160" stroke="#ef4444" stroke-width="3" fill="none" />
+  <path d="M 220 220 L 290 220" stroke="#3b82f6" stroke-width="3" fill="none" />
+
+  <!-- Li-Po to INA219 VIN+ (High current rail) -->
+  <path d="M 220 160 L 250 160 L 250 100 L 850 100 L 850 190 L 880 190" stroke="#ef4444" stroke-width="3" stroke-dasharray="6,3" fill="none" />
+  <text x="550" y="90" fill="#f87171" font-size="11" font-weight="bold">VBAT High-Current Actuation Rail (+3.7V - 4.2V)</text>
+
+  <!-- Buck to ESP32 3.3V -->
+  <path d="M 460 160 L 520 220" stroke="#10b981" stroke-width="3" fill="none" />
+  <!-- Buck to ESP32 GND -->
+  <path d="M 460 220 L 520 260" stroke="#3b82f6" stroke-width="3" fill="none" />
+
+  <!-- INA219 VIN- to SMA Wire (+) -->
+  <path d="M 1140 190 L 1160 190 L 1160 250 L 870 250 L 870 320 L 890 320" stroke="#ef4444" stroke-width="3" fill="none" />
+
+  <!-- SMA Wire (-) to MOSFET Drain -->
+  <path d="M 1130 320 L 1150 320 L 1150 395 L 1010 395 L 1010 420" stroke="#f97316" stroke-width="3" fill="none" />
+
+  <!-- ESP32 GPIO25 to MOSFET Gate -->
+  <path d="M 800 220 L 840 220 L 840 485 L 910 485" stroke="#f97316" stroke-width="2.5" fill="none" />
+  <text x="845" y="475" fill="#fb923c" font-size="10" font-weight="bold">Gate PWM</text>
+
+  <!-- ESP32 GPIO27 to DS18B20 Data -->
+  <path d="M 800 280 L 830 280 L 830 560 L 340 560 L 340 655" stroke="#a855f7" stroke-width="2" fill="none" />
+
+  <!-- ESP32 GPIO26 to Hall Sensor OUT -->
+  <path d="M 800 340 L 820 340 L 820 575 L 700 575 L 700 655" stroke="#ec4899" stroke-width="2" fill="none" />
+
+  <!-- ESP32 GPIO2 to LED Anode -->
+  <path d="M 800 400 L 810 400 L 810 590 L 750 590 L 750 655 L 780 655" stroke="#22c55e" stroke-width="2" fill="none" />
+
+  <!-- Common Ground Bus -->
+  <path d="M 40 760 L 1160 760" stroke="#3b82f6" stroke-width="4" fill="none" />
+  <text x="600" y="785" fill="#60a5fa" font-size="14" font-weight="bold" text-anchor="middle">⚡ COMMON SYSTEM GROUND BUS (GND)</text>
+  <!-- Ground ties -->
+  <line x1="290" y1="220" x2="290" y2="760" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4,4" />
+  <line x1="520" y1="260" x2="520" y2="760" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4,4" />
+  <line x1="1010" y1="530" x2="1010" y2="760" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4,4" />
+
+  <!-- Footer Legend -->
+  <rect x="20" y="805" width="1160" height="35" rx="4" fill="#1e293b" />
+  <circle cx="50" cy="822" r="5" fill="#ef4444" /><text x="65" y="826" fill="#cbd5e1" font-size="11">Power Rail (VBAT / 3.3V)</text>
+  <circle cx="230" cy="822" r="5" fill="#3b82f6" /><text x="245" y="826" fill="#cbd5e1" font-size="11">Ground Bus (GND)</text>
+  <circle cx="390" cy="822" r="5" fill="#f97316" /><text x="405" y="826" fill="#cbd5e1" font-size="11">Gate PWM / Actuation</text>
+  <circle cx="580" cy="822" r="5" fill="#fbbf24" /><text x="595" y="826" fill="#cbd5e1" font-size="11">I2C Telemetry</text>
+  <circle cx="710" cy="822" r="5" fill="#a855f7" /><text x="725" y="826" fill="#cbd5e1" font-size="11">1-Wire Thermal</text>
+  <circle cx="850" cy="822" r="5" fill="#ec4899" /><text x="865" y="826" fill="#cbd5e1" font-size="11">Hall Switch</text>
+  <circle cx="980" cy="822" r="5" fill="#22c55e" /><text x="995" y="826" fill="#cbd5e1" font-size="11">Status LED</text>
+</svg>
